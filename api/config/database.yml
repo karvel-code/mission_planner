@@ -18,6 +18,13 @@ default: &default
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  # Connection settings come from the environment so the same file works locally
+  # and in Docker. Unset values fall back to the local Unix socket and OS user.
+  # DATABASE_URL, if set, is merged on top by Rails and takes precedence.
+  host: <%= ENV["DB_HOST"] %>
+  port: <%= ENV["DB_PORT"] %>
+  username: <%= ENV["DB_USER"] %>
+  password: <%= ENV["DB_PASSWORD"] %>
 
 
 development:

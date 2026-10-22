@@ -1,0 +1,10 @@
+# Development image used by docker-compose.yml. The source is bind-mounted at /app;
+# node_modules lives in a container volume so host (macOS) binaries never leak in.
+FROM node:24-slim
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+EXPOSE 5173

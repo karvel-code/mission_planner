@@ -1,0 +1,19 @@
+# Development image used by docker-compose.yml. The source is bind-mounted at /app;
+# gems are installed into the image, so rebuild after changing the Gemfile:
+#   docker compose build api
+# (Dockerfile in this folder is the production/Kamal image.)
+
+# Make sure RUBY_VERSION matches the Ruby version in .ruby-version
+ARG RUBY_VERSION=3.4.10
+FROM docker.io/library/ruby:$RUBY_VERSION-slim
+
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config postgresql-client && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+WORKDIR /app
+
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+EXPOSE 3000
