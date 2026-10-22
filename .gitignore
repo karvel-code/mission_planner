@@ -1,0 +1,5 @@
+# Repo-wide ignores. Rails ignores live in api/.gitignore; frontend ignores in web/.gitignore.
+.DS_Store
+.env
+.env.*
+!.env.example
