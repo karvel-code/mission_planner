@@ -44,4 +44,8 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Testing [https://rspec.info/] and test data factories [https://github.com/thoughtbot/factory_bot_rails]
+  gem "rspec-rails"
+  gem "factory_bot_rails"
 end
