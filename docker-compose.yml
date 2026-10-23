@@ -35,10 +35,13 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       CORS_ORIGINS: http://localhost:5173
+      # The catalog lives at the repo root, outside ./api, so it is mounted separately.
+      MISSION_DATA_PATH: /data/data.yml
     ports:
       - "3000:3000"
     volumes:
       - ./api:/app
+      - ./data:/data:ro
     depends_on:
       db:
         condition: service_healthy
