@@ -14,3 +14,8 @@
 # ActiveSupport::Inflector.inflections(:en) do |inflect|
 #   inflect.acronym "RESTful"
 # end
+
+# "spacecraft" is its own plural: the table is `spacecraft`, not `spacecrafts`.
+ActiveSupport::Inflector.inflections(:en) do |inflect|
+  inflect.uncountable %w[spacecraft]
+end

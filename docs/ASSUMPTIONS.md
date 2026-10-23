@@ -35,6 +35,9 @@ The world rules in the assignment (straight-line planets, constant speed, `R = R
 | 11 | TEC's `data/data.yml` uses km, km/h, and km of range; a body's radius is `diameter_km ÷ 2`. | Pending | The field names give the units; the trajectory model needs radii. |
 | 12 | Each planet and spacecraft is identified by a `slug` generated from its `name` (e.g. `Nyx Odyssey` → `nyx-odyssey`). | Ours | The data file has no IDs, and re-seeding needs a stable key; renaming an entry in the YAML will create a new record. |
 | 20 | Moons, weather patterns, and habitability are for display only and do not affect trajectories or feasibility. | Ours | The world rules say moons are ignored for flight, and the brief sets no rules for the other fields. |
+| 25 | Seeding never deletes a planet or spacecraft that has disappeared from the YAML. | Ours | Saved mission plans may refer to it; removing records is a deliberate admin step, not a side effect of a data update. |
+| 26 | Only the fields the calculations need are required. The info fields (`potentially_habitable`, `weather_patterns`, `moons`, `size`, `mass_kg`) may be left out of the YAML; moons then default to none. | Ours | A gap in descriptive data shouldn't stop the whole catalog loading. |
+| 27 | Top-level keys other than `planets` and `spacecrafts` are ignored. Unknown fields *inside* a record are kept in `extra_attributes`. | Ours | The plan asks that no record data be lost; there is nowhere sensible to store an unknown top-level section. |
 
 ## Trajectories
 
