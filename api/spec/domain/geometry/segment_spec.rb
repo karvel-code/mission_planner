@@ -1,9 +1,6 @@
 require "rails_helper"
 
 RSpec.describe Geometry::Segment do
-  def point(x, y) = Geometry::Point.new(x, y)
-  def circle(x, y, r) = Geometry::Circle.new(point(x, y), r)
-
   describe ".distance_to_point" do
     let(:a) { point(0, 0) }
     let(:b) { point(100, 0) }
@@ -91,13 +88,13 @@ RSpec.describe Geometry::Segment do
     end
 
     context "at real solar-system scale" do
-      let(:earth) { circle(149_598_262, 0, 6_371.0) }
-      let(:mars) { circle(227_943_824, 0, 3_389.5) }
-      let(:jupiter) { circle(778_340_821, 0, 69_911) }
-      let(:earth_surface) { point(149_598_262 + 6_371.0, 0) }
+      let(:earth) { real_bodies[:earth] }
+      let(:mars) { real_bodies[:mars] }
+      let(:jupiter) { real_bodies[:jupiter] }
+      let(:earth_surface) { point(earth.centre.x + earth.radius, 0) }
 
       it "is blocked by Mars on the straight line from Earth to Jupiter" do
-        jupiter_surface = point(778_340_821 - 69_911, 0)
+        jupiter_surface = point(jupiter.centre.x - jupiter.radius, 0)
 
         expect(described_class.clear?(earth_surface, jupiter_surface, [ earth, mars, jupiter ])).to be(false)
       end

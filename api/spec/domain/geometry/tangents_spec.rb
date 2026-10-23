@@ -1,8 +1,6 @@
 require "rails_helper"
 
 RSpec.describe Geometry::Tangents do
-  def point(x, y) = Geometry::Point.new(x, y)
-
   describe ".from_point" do
     let(:circle) { Geometry::Circle.new(point(100, 0), 30) }
 
@@ -77,23 +75,22 @@ RSpec.describe Geometry::Tangents do
     end
 
     it "keeps precision at real solar-system scale" do
-      earth_surface = point(149_598_262 + 6_371.0, 0)
-      jupiter = Geometry::Circle.new(point(778_340_821, 0), 69_911)
+      earth = real_bodies[:earth]
+      jupiter = real_bodies[:jupiter]
+      earth_surface = point(earth.centre.x + earth.radius, 0)
       d = earth_surface.distance_to(jupiter.centre)
 
       tangents = described_class.from_point(earth_surface, jupiter)
 
       expect(tangents.size).to eq(2)
       tangents.each do |t|
-        expect(jupiter.centre.distance_to(t)).to be_within(1e-6).of(69_911)
-        expect(earth_surface.distance_to(t)).to be_within(1e-3).of(Math.sqrt((d**2) - (69_911**2)))
+        expect(jupiter.centre.distance_to(t)).to be_within(1e-6).of(jupiter.radius)
+        expect(earth_surface.distance_to(t)).to be_within(1e-3).of(Math.sqrt((d**2) - (jupiter.radius**2)))
       end
     end
   end
 
   describe ".common" do
-    def circle(x, y, r) = Geometry::Circle.new(point(x, y), r)
-
     # Signed side of `c` relative to the line through a → b: > 0 left, < 0 right.
     def side(a, b, c) = (b - a).cross(c - a)
 
@@ -203,8 +200,8 @@ RSpec.describe Geometry::Tangents do
     end
 
     it "keeps precision at real solar-system scale" do
-      earth = circle(149_598_262, 0, 6_371.0)
-      mars = circle(227_943_824, 0, 3_389.5)
+      earth = real_bodies[:earth]
+      mars = real_bodies[:mars]
       pairs = described_class.common(earth, mars)
 
       expect(pairs.size).to eq(4)

@@ -1,0 +1,175 @@
+planets:
+  - name: Sun
+    type: Star
+    diameter_km: 1391016
+    distance_from_sun_km: 0
+    average_temperature_c: 5505
+    potentially_habitable: false
+    weather_patterns: "Solar flares, radiation storms"
+    radiation_levels_msv: 100000
+    gravity_m_per_s2: 274
+    moons: []
+
+  - name: Mercury
+    type: Planet
+    diameter_km: 4879
+    distance_from_sun_km: 57900000
+    average_temperature_c: 167
+    potentially_habitable: false
+    weather_patterns: "Extreme temperature fluctuations"
+    radiation_levels_msv: 1000
+    gravity_m_per_s2: 3.7
+    moons: []
+
+  - name: Venus
+    type: Planet
+    diameter_km: 12104
+    distance_from_sun_km: 108200000
+    average_temperature_c: 464
+    potentially_habitable: false
+    weather_patterns: "Thick clouds, sulfuric acid rain"
+    radiation_levels_msv: 800
+    gravity_m_per_s2: 8.87
+    moons: []
+
+  - name: Earth
+    type: Planet
+    diameter_km: 12742
+    distance_from_sun_km: 149600000
+    average_temperature_c: 15
+    potentially_habitable: true
+    weather_patterns: "Varied (storms, rain, snow)"
+    radiation_levels_msv: 0.1
+    gravity_m_per_s2: 9.8
+    moons:
+      - Moon
+
+  - name: Mars
+    type: Planet
+    diameter_km: 6779
+    distance_from_sun_km: 227900000
+    average_temperature_c: -65
+    potentially_habitable: true
+    weather_patterns: "Dust storms, low winds"
+    radiation_levels_msv: 240
+    gravity_m_per_s2: 3.71
+    moons:
+      - Phobos
+      - Deimos
+
+  - name: Jupiter
+    type: Planet
+    diameter_km: 139820
+    distance_from_sun_km: 778500000
+    average_temperature_c: -110
+    potentially_habitable: false
+    weather_patterns: "Intense storms, Great Red Spot"
+    radiation_levels_msv: 2000
+    gravity_m_per_s2: 24.79
+    moons:
+      - Europa
+      - Ganymede
+      - Io
+      - Callisto
+
+  - name: Saturn
+    type: Planet
+    diameter_km: 116460
+    distance_from_sun_km: 1434000000
+    average_temperature_c: -140
+    potentially_habitable: false
+    weather_patterns: "Storms, icy winds"
+    radiation_levels_msv: 1000
+    gravity_m_per_s2: 10.44
+    moons:
+      - Titan
+      - Enceladus
+      - Mimas
+
+  - name: Uranus
+    type: Planet
+    diameter_km: 50724
+    distance_from_sun_km: 2871000000
+    average_temperature_c: -195
+    potentially_habitable: false
+    weather_patterns: "Methane clouds, ice storms"
+    radiation_levels_msv: 500
+    gravity_m_per_s2: 8.69
+    moons:
+      - Miranda
+      - Ariel
+      - Umbriel
+
+  - name: Neptune
+    type: Planet
+    diameter_km: 49244
+    distance_from_sun_km: 4495000000
+    average_temperature_c: -200
+    potentially_habitable: false
+    weather_patterns: "Supersonic winds, methane storms"
+    radiation_levels_msv: 600
+    gravity_m_per_s2: 11.15
+    moons:
+      - Triton
+      - Proteus
+
+spacecrafts:
+  - name: Millennial Hopper
+    size: Small
+    mass_kg: 500000
+    capacity: 5
+    range_km: 400000000
+    travel_speed_km_per_hour: 500000
+    gravity_generator: true
+    operational_temperature_c_min: -300
+    operational_temperature_c_max: 150
+
+  - name: Star Explorer 1
+    size: Medium
+    mass_kg: 1500000
+    capacity: 10
+    range_km: 1500000000
+    travel_speed_km_per_hour: 750000
+    gravity_generator: false
+    operational_temperature_c_min: -280
+    operational_temperature_c_max: 465
+
+  - name: Nyx Odyssey
+    size: Large
+    mass_kg: 3000000
+    capacity: 21
+    range_km: 8000000000
+    travel_speed_km_per_hour: 600000
+    gravity_generator: true
+    operational_temperature_c_min: -350
+    operational_temperature_c_max: 250
+
+  - name: Nostromo II
+    size: Medium
+    mass_kg: 2000000
+    capacity: 16
+    range_km: 3000000000
+    travel_speed_km_per_hour: 800000
+    gravity_generator: true
+    operational_temperature_c_min: -305
+    operational_temperature_c_max: 100
+
+  - name: Serenity XL
+    size: Extra Large
+    mass_kg: 5000000
+    capacity: 30
+    range_km: 15000000000
+    travel_speed_km_per_hour: 500000
+    gravity_generator: true
+    operational_temperature_c_min: -420
+    operational_temperature_c_max: 500
+
+  - name: Galactica Scout
+    size: Small
+    mass_kg: 400000
+    capacity: 3
+    range_km: 500000000
+    travel_speed_km_per_hour: 400000
+    gravity_generator: false
+    operational_temperature_c_min: -310
+    operational_temperature_c_max: 555
