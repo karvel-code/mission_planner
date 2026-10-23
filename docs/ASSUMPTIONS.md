@@ -23,6 +23,10 @@ The world rules in the assignment (straight-line planets, constant speed, `R = R
 | 17 | Bodies with `type: Star` are not destinations. | Ours | A ship cannot land on the Sun. |
 | 18 | Advisories (non-blocking, thresholds in `config/advisories.yml`): surface gravity above 15 m/s² (≈ 1.5 g), radiation of 500 mSv or more, and a mission longer than 30 days on a spacecraft without a gravity generator. | Ours | These are comfort and safety warnings for the agent, not physical limits, so they should not make a mission infeasible. |
 | 19 | The radiation period behind `radiation_levels_msv` is unknown, so the value is shown as given. | Pending | The data gives no unit of time, and inventing one would mislead agents. |
+| 21 | Earth is identified by its name, `Earth`. | Ours | The data has no IDs or flags marking the home planet, and the name is stable. |
+| 22 | Route problems don't stop the legs being calculated: a repeated stop is skipped, and a route that doesn't start at Earth leaves its first stop from the surface point facing the next one. | Ours | Drafts can be saved (#10), so agents should still see distances and range while they fix the route. |
+| 23 | The starting planet is not a landing: it gets no temperature check and no advisories. | Ours | The ship begins the mission there rather than arriving. |
+| 24 | Gravity is shown as a multiple of Earth's using standard gravity, 9.80665 m/s². | Ours | It is only for messages, and standard gravity is the usual reference for "g". |
 
 ## Data
 

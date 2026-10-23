@@ -1,0 +1,10 @@
+# Thresholds for non-blocking mission advisories (docs/ASSUMPTIONS.md #18).
+# Read with Rails.application.config_for(:advisories) and passed to
+# MissionCalculator as a MissionCalculator::Thresholds.
+shared:
+  # Warn when a landing stop's surface gravity is above this (≈ 1.5 g).
+  high_gravity_m_per_s2: 15
+  # Warn when a landing stop's radiation level is at or above this.
+  high_radiation_msv: 500
+  # Warn when a mission on a spacecraft without a gravity generator lasts longer than this.
+  max_days_without_gravity_generator: 30
