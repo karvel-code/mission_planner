@@ -1,9 +1,6 @@
 require "rails_helper"
 
 RSpec.describe TrajectoryCalculator do
-  def point(x, y) = Geometry::Point.new(x, y)
-  def circle(x, r) = Geometry::Circle.new(point(x, 0), r)
-
   # Points spread along a segment, for checking the path against every circle.
   def sample(segment, steps: 50)
     (0..steps).map do |i|
@@ -36,8 +33,8 @@ RSpec.describe TrajectoryCalculator do
   end
 
   context "with no obstacle between the planets" do
-    let(:departure) { circle(0, 30) }
-    let(:target) { circle(100, 20) }
+    let(:departure) { on_axis(0, 30) }
+    let(:target) { on_axis(100, 20) }
     let(:start) { point(30, 0) }
     let(:trajectory) { described_class.call(start:, departure:, target:, planets: [ departure, target ]) }
 
@@ -57,9 +54,9 @@ RSpec.describe TrajectoryCalculator do
   end
 
   context "with one obstacle between the planets" do
-    let(:departure) { circle(0, 10) }
-    let(:obstacle) { circle(100, 30) }
-    let(:target) { circle(200, 10) }
+    let(:departure) { on_axis(0, 10) }
+    let(:obstacle) { on_axis(100, 30) }
+    let(:target) { on_axis(200, 10) }
     let(:start) { point(10, 0) }
     let(:trajectory) { described_class.call(start:, departure:, target:, planets: [ departure, obstacle, target ]) }
 
@@ -86,10 +83,10 @@ RSpec.describe TrajectoryCalculator do
   end
 
   it "bypasses only the bigger planet when a small one hides behind it" do
-    departure = circle(0, 10)
-    big = circle(100, 40)
-    small = circle(140, 15)
-    target = circle(250, 10)
+    departure = on_axis(0, 10)
+    big = on_axis(100, 40)
+    small = on_axis(140, 15)
+    target = on_axis(250, 10)
 
     trajectory = described_class.call(start: point(10, 0), departure:, target:, planets: [ departure, big, small, target ])
 
@@ -97,11 +94,11 @@ RSpec.describe TrajectoryCalculator do
   end
 
   it "lists a planet the path only touches in passing as bypassed" do
-    departure = circle(0, 30)
-    target = circle(300, 30)
+    departure = on_axis(0, 30)
+    target = on_axis(300, 30)
     # The tangent from the target's centre to the departure planet makes an angle
     # with sin = 30 / 300 to the axis, so it passes exactly 150 × 0.1 = 15 from (150, 0).
-    grazed = circle(150, 15)
+    grazed = on_axis(150, 15)
 
     trajectory = described_class.call(start: point(-30, 0), departure:, target:, planets: [ departure, grazed, target ])
 
@@ -110,8 +107,8 @@ RSpec.describe TrajectoryCalculator do
   end
 
   context "when starting on the far side of the departure planet" do
-    let(:departure) { circle(0, 30) }
-    let(:target) { circle(100, 30) }
+    let(:departure) { on_axis(0, 30) }
+    let(:target) { on_axis(100, 30) }
     let(:start) { point(-30, 0) }
     let(:trajectory) { described_class.call(start:, departure:, target:, planets: [ departure, target ]) }
 
@@ -137,8 +134,8 @@ RSpec.describe TrajectoryCalculator do
   end
 
   it "does not wrap when starting on the side facing the target" do
-    departure = circle(100, 30)
-    target = circle(0, 30)
+    departure = on_axis(100, 30)
+    target = on_axis(0, 30)
 
     trajectory = described_class.call(start: point(70, 0), departure:, target:, planets: [ departure, target ])
 
@@ -147,7 +144,7 @@ RSpec.describe TrajectoryCalculator do
   end
 
   it "works without a departure planet" do
-    target = circle(100, 20)
+    target = on_axis(100, 20)
 
     trajectory = described_class.call(start: point(0, 50), target:, planets: [ target ])
 
@@ -156,22 +153,22 @@ RSpec.describe TrajectoryCalculator do
   end
 
   it "rejects a target that is also the departure planet" do
-    planet = circle(0, 30)
+    planet = on_axis(0, 30)
 
     expect { described_class.call(start: point(30, 0), departure: planet, target: planet, planets: [ planet ]) }
       .to raise_error(ArgumentError)
   end
 
   it "rejects a start below the axis" do
-    target = circle(100, 20)
+    target = on_axis(100, 20)
 
     expect { described_class.call(start: point(0, -5), target:, planets: [ target ]) }.to raise_error(ArgumentError)
   end
 
   context "with several obstacles and a far-side start" do
-    let(:departure) { circle(0, 20) }
-    let(:target) { circle(300, 25) }
-    let(:planets) { [ departure, circle(80, 30), circle(150, 15), circle(190, 35), target ] }
+    let(:departure) { on_axis(0, 20) }
+    let(:target) { on_axis(300, 25) }
+    let(:planets) { [ departure, on_axis(80, 30), on_axis(150, 15), on_axis(190, 35), target ] }
     let(:start) { point(-20, 0) }
     let(:trajectory) { described_class.call(start:, departure:, target:, planets:) }
 
@@ -192,23 +189,18 @@ RSpec.describe TrajectoryCalculator do
     end
   end
 
-  # Bodies from data/data.yml, with radius = diameter_km ÷ 2.
   context "with the real data" do
-    let(:sun) { circle(0, 695_508) }
-    let(:mercury) { circle(57_900_000, 2_439.5) }
-    let(:venus) { circle(108_200_000, 6_052) }
-    let(:earth) { circle(149_600_000, 6_371) }
-    let(:mars) { circle(227_900_000, 3_389.5) }
-    let(:jupiter) { circle(778_500_000, 69_910) }
-    let(:saturn) { circle(1_434_000_000, 58_230) }
-    let(:uranus) { circle(2_871_000_000, 25_362) }
-    let(:neptune) { circle(4_495_000_000, 24_622) }
-    let(:planets) { [ sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune ] }
-    let(:earth_facing_out) { point(149_600_000 + 6_371, 0) }
+    let(:planets) { real_bodies.values }
+    let(:mercury) { real_bodies[:mercury] }
+    let(:venus) { real_bodies[:venus] }
+    let(:earth) { real_bodies[:earth] }
+    let(:mars) { real_bodies[:mars] }
+    let(:jupiter) { real_bodies[:jupiter] }
+    let(:earth_facing_out) { point(earth.centre.x + earth.radius, 0) }
 
     context "from Earth to Jupiter" do
       let(:trajectory) { described_class.call(start: earth_facing_out, departure: earth, target: jupiter, planets:) }
-      let(:straight) { 778_500_000 - 69_910 - (149_600_000 + 6_371) }
+      let(:straight) { jupiter.centre.x - jupiter.radius - earth_facing_out.x }
 
       it "goes around Mars" do
         expect(trajectory.bypassed).to eq([ mars ])
@@ -220,14 +212,14 @@ RSpec.describe TrajectoryCalculator do
       end
 
       it "arrives on Jupiter's surface without entering any body" do
-        expect(jupiter.centre.distance_to(trajectory.arrival)).to be_within(1e-3).of(69_910)
+        expect(jupiter.centre.distance_to(trajectory.arrival)).to be_within(1e-3).of(jupiter.radius)
         expect_path_outside(trajectory, planets)
         expect_continuous(trajectory, earth_facing_out)
       end
     end
 
     it "flies from Earth to Mercury around Venus, without touching the Sun" do
-      earth_facing_sun = point(149_600_000 - 6_371, 0)
+      earth_facing_sun = point(earth.centre.x - earth.radius, 0)
 
       trajectory = described_class.call(start: earth_facing_sun, departure: earth, target: mercury, planets:)
 
@@ -236,13 +228,13 @@ RSpec.describe TrajectoryCalculator do
     end
 
     it "wraps just over a quarter of Mars when leaving towards Jupiter from the side facing Earth" do
-      start = point(227_900_000 - 3_389.5, 0)
-      d = 778_500_000 - 227_900_000
-      wrap = 3_389.5 * (Math::PI - Math.acos(3_389.5 / d))
+      start = point(mars.centre.x - mars.radius, 0)
+      d = jupiter.centre.x - mars.centre.x
+      wrap = mars.radius * (Math::PI - Math.acos(mars.radius / d))
 
       trajectory = described_class.call(start:, departure: mars, target: jupiter, planets:)
 
-      expect(trajectory.length).to be_within(1e-3).of(wrap + Math.sqrt((d**2) - (3_389.5**2)) - 69_910)
+      expect(trajectory.length).to be_within(1e-3).of(wrap + Math.sqrt((d**2) - (mars.radius**2)) - jupiter.radius)
       # The clearance tolerance (EPSILON × radius, 3.4 m on Mars) lets the path
       # leave from a nearby node a few hundredths of a km early; the length ties.
       expect(trajectory.departure_wrap).to be_within(0.1).of(wrap)
