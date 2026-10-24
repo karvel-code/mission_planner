@@ -4,7 +4,6 @@ import { Controller, useForm, useWatch } from 'react-hook-form'
 import { useMissionCalculation } from '../api/hooks'
 import type { MissionPlan, Planet, Spacecraft } from '../api/schemas'
 import { Field, inputClass } from '../components/Field'
-import { formatDistance, formatDuration } from '../lib/format'
 import { EARTH, type RouteNeeds } from '../lib/mission'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { AdvisoriesPanel } from './AdvisoriesPanel'
@@ -15,6 +14,7 @@ import { PassengerInput } from './PassengerInput'
 import { PlanetInfoCard } from './PlanetInfoCard'
 import { RouteBuilder } from './RouteBuilder'
 import { SpacecraftPicker } from './SpacecraftPicker'
+import { TrajectoryView } from './TrajectoryView'
 
 /** How long the planner waits after the last change before recalculating. */
 export const CALCULATION_DELAY_MS = 300
@@ -41,6 +41,7 @@ export function PlannerForm({ plan, planets, fleet }: Props) {
   })
   const [reducedFrom, setReducedFrom] = useState<number | null>(null)
   const [inspected, setInspected] = useState<Planet | null>(null)
+  const [highlightedLeg, setHighlightedLeg] = useState<number | null>(null)
 
   const earth = planets.find((p) => p.name === EARTH)!
   const destinations = planets.filter((p) => p.destination)
@@ -116,6 +117,7 @@ export function PlannerForm({ plan, planets, fleet }: Props) {
                 }}
                 spacecraft={spacecraft}
                 reducedFrom={reducedFrom}
+                routeKm={result?.totals.distance_km ?? null}
               />
             )}
           />
@@ -144,30 +146,35 @@ export function PlannerForm({ plan, planets, fleet }: Props) {
         </Step>
       </section>
 
-      <section aria-label="Mission" aria-busy={updating} className="grid min-w-0 content-start gap-4 p-[22px]">
-        {!input ? (
-          <p className="text-muted">Add a destination in step 04 to see the legs, travel time, and range.</p>
-        ) : calculation.isError ? (
-          <p role="alert" className="text-error">
-            Could not calculate this mission: {calculation.error.message}
-          </p>
-        ) : !result || !needs ? (
-          <p className="text-muted">Calculating…</p>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2">
-              <Stat label="Distance">{formatDistance(result.totals.distance_km)}</Stat>
-              <Stat label="Duration">{formatDuration(result.totals.duration_hours)}</Stat>
-              <Stat label="Range used">{formatDistance(result.totals.range_used_km)}</Stat>
-              <span role="status" className="text-[12.5px] text-muted">
-                {updating ? 'Updating…' : ''}
-              </span>
-            </div>
-            <FeasibilityPanel result={result} spacecraft={spacecraft} fleet={fleet} needs={needs} />
-            <AdvisoriesPanel advisories={result.advisories} />
-            <LegTable result={result} planets={planets} />
-          </>
-        )}
+      <section aria-label="Mission" aria-busy={updating} className="grid min-w-0 content-start">
+        <TrajectoryView
+          result={result}
+          planets={planets}
+          fleet={fleet}
+          spacecraft={spacecraft}
+          routeIds={input?.planet_ids ?? []}
+          highlighted={highlightedLeg}
+          onHighlight={setHighlightedLeg}
+          updating={updating}
+        />
+
+        <div className="grid content-start gap-4 p-[22px]">
+          {!input ? (
+            <p className="text-muted">Add a destination in step 04 to see the legs, travel time, and range.</p>
+          ) : calculation.isError ? (
+            <p role="alert" className="text-error">
+              Could not calculate this mission: {calculation.error.message}
+            </p>
+          ) : !result || !needs ? (
+            <p className="text-muted">Calculating…</p>
+          ) : (
+            <>
+              <FeasibilityPanel result={result} spacecraft={spacecraft} fleet={fleet} needs={needs} />
+              <AdvisoriesPanel advisories={result.advisories} />
+              <LegTable result={result} planets={planets} highlighted={highlightedLeg} onHighlight={setHighlightedLeg} />
+            </>
+          )}
+        </div>
       </section>
     </div>
   )
@@ -184,14 +191,5 @@ function Step({ n, title, children }: { n: string; title: string; children: Reac
       </header>
       {children}
     </section>
-  )
-}
-
-function Stat({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="grid">
-      <span className="label">{label}</span>
-      <span className="text-2xl font-medium tracking-[-0.01em] tabular-nums">{children}</span>
-    </div>
   )
 }

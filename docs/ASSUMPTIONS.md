@@ -34,6 +34,7 @@ The world rules in the assignment (straight-line planets, constant speed, `R = R
 | 32 | A duplicated plan is named "<original name> (copy)" and keeps every other field and the route. | Ours | Agents duplicate a plan to try a variation; the suffix keeps the two apart in the list. |
 | 33 | The planner's suggestions ("reduce to N passengers", "choose another spacecraft", "fits route") are worked out in the browser from the API's route distance, which doesn't depend on the spacecraft. The suggested spacecraft is the one that fits with the smallest range. Every result shown as a number comes from the API. | Ours | Gives instant hints without one API call per spacecraft; the smallest sufficient spacecraft is usually the cheapest to offer. |
 | 34 | A new plan starts with one passenger on the first spacecraft in the catalog. | Ours | A mission is for at least one customer; the agent changes both in steps 02–03. |
+| 35 | The 3D trajectory view and hangar need WebGL 2. Without it, the planner shows the 2D side view (same paths, same leg highlighting) and the spacecraft specs without the 3D ship. | Ours | Agents on older or locked-down machines still get every number and the route; the 3D view is for presenting the plan. |
 
 ## Data
 

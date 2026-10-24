@@ -12,6 +12,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: { '/api': apiTarget },
+    // File-change events don't cross Docker bind mounts on macOS, so in the
+    // container Vite polls for changes instead (docker-compose.yml sets this).
+    watch: process.env.VITE_USE_POLLING ? { usePolling: true, interval: 300 } : undefined,
   },
   test: {
     environment: 'jsdom',

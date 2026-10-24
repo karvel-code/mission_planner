@@ -2,8 +2,16 @@ import type { MissionResult, Planet } from '../api/schemas'
 import { formatDistance, formatDuration } from '../lib/format'
 import { planetColour } from '../lib/planets'
 
+interface Props {
+  result: MissionResult
+  planets: Planet[]
+  /** Index of the highlighted leg, shared with the route diagram. */
+  highlighted: number | null
+  onHighlight: (leg: number | null) => void
+}
+
 /** One row per leg, with the mission totals underneath. */
-export function LegTable({ result, planets }: { result: MissionResult; planets: Planet[] }) {
+export function LegTable({ result, planets, highlighted, onHighlight }: Props) {
   const byId = new Map(planets.map((p) => [p.id, p]))
   const name = (id: number) => byId.get(id)?.name ?? `Planet ${id}`
   const th = 'label px-3 py-2.5 text-left font-medium'
@@ -28,7 +36,18 @@ export function LegTable({ result, planets }: { result: MissionResult; planets: 
           </thead>
           <tbody>
             {result.legs.map((leg, i) => (
-              <tr key={i} className="border-b border-line">
+              <tr
+                key={i}
+                tabIndex={0}
+                data-highlighted={highlighted === i}
+                onMouseEnter={() => onHighlight(i)}
+                onMouseLeave={() => onHighlight(null)}
+                onFocus={() => onHighlight(i)}
+                onBlur={() => onHighlight(null)}
+                className={`border-b border-line outline-offset-[-2px] ${
+                  highlighted === i ? 'bg-[linear-gradient(90deg,var(--color-orange-soft),transparent_80%)]' : ''
+                }`}
+              >
                 <td className="px-3 py-2.5">
                   <span className="flex items-center gap-1.5">
                     <Dot planet={byId.get(leg.from_planet_id)} />
