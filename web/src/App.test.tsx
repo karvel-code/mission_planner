@@ -57,9 +57,9 @@ describe('Planner view', () => {
     })
 
     expect(await screen.findByRole('heading', { name: 'Red planet getaway', level: 1 })).toBeInTheDocument()
-    expect(screen.getByText('Okafor family')).toBeInTheDocument()
-    expect(await screen.findByText('Serenity XL')).toBeInTheDocument()
-    expect(screen.getByText('78.3 million km')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Okafor family')).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /Serenity XL/ })).toBeChecked()
+    expect(await screen.findByText('78.3 million km', { selector: 'span' })).toBeInTheDocument()
   })
 
   it('starts a new plan', async () => {
@@ -67,7 +67,7 @@ describe('Planner view', () => {
 
     renderWithQuery(<App />)
 
-    expect(screen.getByRole('heading', { name: 'Untitled mission', level: 1 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Untitled mission', level: 1 })).toBeInTheDocument()
     expect(screen.getByText('New mission plan')).toBeInTheDocument()
   })
 

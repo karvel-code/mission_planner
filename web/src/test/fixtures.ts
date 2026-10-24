@@ -1,39 +1,10 @@
-import type { MissionPlan, MissionPlanSummary, Planet, Spacecraft } from '../api/schemas'
+import type { MissionPlan, MissionPlanSummary } from '../api/schemas'
+import { planetNamed, spacecraftNamed } from './catalog'
 
 // Responses shaped like the Rails API's, with values from data/data.yml.
 
-export const earth: Planet = {
-  id: 4,
-  name: 'Earth',
-  slug: 'earth',
-  body_type: 'Planet',
-  destination: true,
-  radius_km: 6371,
-  distance_from_sun_km: 149_600_000,
-  average_temperature_c: 15,
-  gravity_m_per_s2: 9.8,
-  radiation_levels_msv: 0.1,
-  potentially_habitable: true,
-  weather_patterns: 'Varied (storms, rain, snow)',
-  moons: ['Moon'],
-  extra_attributes: {},
-}
-
-export const serenity: Spacecraft = {
-  id: 5,
-  name: 'Serenity XL',
-  slug: 'serenity-xl',
-  size: 'Extra Large',
-  mass_kg: 5_000_000,
-  capacity: 30,
-  range_km: 15_000_000_000,
-  speed_kmh: 500_000,
-  gravity_generator: true,
-  min_operating_temp_c: -420,
-  max_operating_temp_c: 500,
-  extra_attributes: {},
-  landable_planet_ids: [2, 3, 4, 5, 6, 7, 8, 9],
-}
+export const earth = planetNamed('Earth')
+export const serenity = spacecraftNamed('Serenity XL')
 
 export const redPlanetGetaway: MissionPlanSummary = {
   id: 1,
