@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { MissionPlan, Spacecraft } from '../api/schemas'
+import type { MissionPlan, MissionPlanInput, Spacecraft } from '../api/schemas'
 
 /** The planner's form. `stops` are the planet ids after Earth, in visiting order. */
 export const plannerFormSchema = z.object({
@@ -8,7 +8,7 @@ export const plannerFormSchema = z.object({
   notes: z.string(),
   spacecraft_id: z.number(),
   passenger_count: z.number().int().min(0),
-  stops: z.array(z.number()),
+  stops: z.array(z.number()).min(1, 'Add at least one destination'),
 })
 
 export type PlannerFormValues = z.infer<typeof plannerFormSchema>
@@ -29,3 +29,13 @@ export function initialValues(plan: MissionPlan | null, fleet: Spacecraft[]): Pl
     stops: plan.planet_ids.slice(1),
   }
 }
+
+/** The body to save: blank text fields become null, and the route starts at Earth. */
+export const toPlanInput = (values: PlannerFormValues, earthId: number): MissionPlanInput => ({
+  name: values.name.trim(),
+  customer_name: values.customer_name.trim() || null,
+  notes: values.notes.trim() || null,
+  spacecraft_id: values.spacecraft_id,
+  passenger_count: values.passenger_count,
+  planet_ids: [earthId, ...values.stops],
+})
