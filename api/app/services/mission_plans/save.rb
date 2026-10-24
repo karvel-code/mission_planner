@@ -45,11 +45,9 @@ module MissionPlans
 
     # Sets the route from the ids, in order. Returns the ids that match no planet.
     def assign_route
-      ids = @planet_ids.map(&:to_i)
-      planets = Planet.where(id: ids).index_by(&:id)
-
-      @plan.route = ids.filter_map { |id| planets[id] }
-      ids.reject { |id| planets.key?(id) }
+      planets, unknown_ids = Planet.find_in_order(@planet_ids)
+      @plan.route = planets
+      unknown_ids
     end
   end
 end
