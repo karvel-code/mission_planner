@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -35,8 +35,16 @@ describe('Spacecraft picker', () => {
     expect(within(serenity).getByText('30')).toBeInTheDocument()
     expect(within(serenity).getByText('500,000 km/h')).toBeInTheDocument()
     expect(within(serenity).getByText('15 billion km')).toBeInTheDocument()
-    expect(within(serenity).getByText('Generator')).toBeInTheDocument()
-    expect(within(serenity).getByText('-420 to 500 °C')).toBeInTheDocument()
+    expect(serenity).toHaveTextContent('Gravity generator · operates -420 to 500 °C')
+  })
+
+  it('shows the chosen spacecraft in the hangar', async () => {
+    const user = await openNewPlan()
+    const hangar = () => screen.getByText('Selected spacecraft').parentElement!
+
+    expect(within(hangar()).getByRole('heading', { name: 'Millennial Hopper' })).toBeInTheDocument()
+    await chooseSpacecraft(user, 'Galactica Scout')
+    expect(within(hangar()).getByRole('heading', { name: 'Galactica Scout' })).toBeInTheDocument()
   })
 
   it('shows which spacecraft can fly the route', async () => {
@@ -63,6 +71,34 @@ describe('Passengers', () => {
 
     await user.clear(input)
     expect(screen.getByRole('button', { name: 'Fewer passengers' })).toBeDisabled()
+  })
+
+  it('moves with the slider and fills the seat map', async () => {
+    const user = await openNewPlan()
+    await chooseSpacecraft(user, 'Serenity XL')
+    const slider = screen.getByRole('slider', { name: 'Passengers slider' })
+
+    expect(slider).toHaveAttribute('max', '30')
+    // jsdom doesn't move range inputs with the keyboard; set the value as a drag would.
+    fireEvent.change(slider, { target: { value: '3' } })
+
+    expect(screen.getByRole('spinbutton', { name: 'Number of passengers' })).toHaveValue(3)
+    expect(screen.getByText('3', { selector: 'strong' }).parentElement).toHaveTextContent('3 of 30 seats')
+  })
+
+  it('shows how the load shortens the reach, and the route against it', async () => {
+    const user = await openNewPlan()
+    await chooseSpacecraft(user, 'Serenity XL')
+    const input = screen.getByRole('spinbutton', { name: 'Number of passengers' })
+    await user.clear(input)
+    await user.type(input, '10')
+
+    expect(screen.getByText('1.420')).toBeInTheDocument()
+    expect(screen.getByText('R = 1 + 0.042 × 10')).toBeInTheDocument()
+    expect(screen.getByText('30% less than empty')).toBeInTheDocument()
+
+    await addStop(user, 'Mars')
+    expect(await screen.findByRole('meter', { name: "Route distance as a share of the ship's reach" })).toBeInTheDocument()
   })
 
   it('lowers the count to fit a smaller spacecraft, and says so', async () => {
@@ -203,6 +239,74 @@ describe('Live calculation', () => {
     // Galactica Scout (max 555 °C, 3 seats) fits one passenger with the least range to spare.
     expect(blockers).toHaveTextContent('Choose Galactica Scout.')
     expect(within(screen.getByRole('region', { name: 'Feasibility' })).getByText(/Can't land on Venus/)).toBeInTheDocument()
+  })
+})
+
+describe('Route diagram', () => {
+  async function planEarthMarsJupiter() {
+    const user = await openNewPlan()
+    await chooseSpacecraft(user, 'Serenity XL')
+    await addStop(user, 'Mars')
+    await addStop(user, 'Jupiter')
+    await screen.findByRole('table')
+    return user
+  }
+
+  const diagramLeg = (n: number) => document.querySelector<SVGGElement>(`g[data-leg="${n}"]`)!
+  const tableRow = (n: number) => within(screen.getByRole('table')).getAllByRole('row')[n]
+
+  it('shows every planet before there is a route', async () => {
+    await openNewPlan()
+
+    const diagram = screen.getByRole('img', { name: 'Side view of the planets, not to scale' })
+    expect(within(diagram).getByText('Sun')).toBeInTheDocument()
+    expect(within(diagram).getByText('Neptune')).toBeInTheDocument()
+    expect(diagram.querySelectorAll('g[data-leg]')).toHaveLength(0)
+  })
+
+  it('draws each leg, numbered, and says it is not to scale', async () => {
+    await planEarthMarsJupiter()
+
+    const diagram = screen.getByRole('img', { name: /Side view of the route, not to scale/ })
+    expect(diagram).toHaveAccessibleName(
+      'Side view of the route, not to scale: leg 1, Earth to Mars; leg 2, Mars to Jupiter',
+    )
+    expect(screen.getByText('Not to scale')).toBeVisible()
+    expect(diagram.querySelectorAll('g[data-leg]')).toHaveLength(2)
+    expect(within(diagram).getByText('Neptune')).toBeInTheDocument() // every body is drawn
+  })
+
+  it('keeps leg numbers apart when a return leg retraces the outbound one', async () => {
+    const user = await openNewPlan()
+    await chooseSpacecraft(user, 'Serenity XL')
+    await addStop(user, 'Mercury')
+    await addStop(user, 'Earth')
+    await screen.findByRole('table')
+
+    const labelY = (n: number) => Number(diagramLeg(n).querySelector('circle')!.getAttribute('cy'))
+    expect(Math.abs(labelY(1) - labelY(2))).toBeGreaterThanOrEqual(18)
+  })
+
+  it('highlights the matching table row when a leg is hovered', async () => {
+    const user = await planEarthMarsJupiter()
+
+    await user.hover(diagramLeg(2))
+
+    expect(tableRow(2)).toHaveAttribute('data-highlighted', 'true')
+    expect(tableRow(1)).toHaveAttribute('data-highlighted', 'false')
+    expect(diagramLeg(2)).toHaveAttribute('data-highlighted', 'true')
+
+    await user.unhover(diagramLeg(2))
+    expect(tableRow(2)).toHaveAttribute('data-highlighted', 'false')
+  })
+
+  it('highlights the matching leg when a table row is hovered', async () => {
+    const user = await planEarthMarsJupiter()
+
+    await user.hover(tableRow(1))
+
+    expect(diagramLeg(1)).toHaveAttribute('data-highlighted', 'true')
+    expect(diagramLeg(2)).toHaveAttribute('data-highlighted', 'false')
   })
 })
 
