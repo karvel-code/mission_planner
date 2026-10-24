@@ -30,6 +30,8 @@ The world rules in the assignment (straight-line planets, constant speed, `R = R
 | 28 | A malformed route (not starting at Earth, no destination, the same planet twice in a row) blocks saving. Every other violation, including a star stop or an incompatible landing temperature, is saved with the draft. | Ours | Follows PLAN.md Phase 5; a malformed route has no meaningful mission, while the other problems are things the agent fixes with the customer (#10). |
 | 29 | A plan needs a spacecraft to be saved. | Ours | Every cached total (range, duration, feasibility) depends on the spacecraft. |
 | 30 | A planet that appears on any saved route cannot be deleted. | Ours | Keeps saved plans intact; goes with #25. |
+| 31 | `POST /api/mission_calculations` rejects only input it cannot calculate with (unknown spacecraft or planet, bad passenger count). Route problems come back as violations with a 200, even though saving such a route is a 422. | Ours | The planner recalculates as the agent builds the route, so a half-built route must still preview. |
+| 32 | A duplicated plan is named "<original name> (copy)" and keeps every other field and the route. | Ours | Agents duplicate a plan to try a variation; the suffix keeps the two apart in the list. |
 
 ## Data
 
