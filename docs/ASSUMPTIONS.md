@@ -27,6 +27,9 @@ The world rules in the assignment (straight-line planets, constant speed, `R = R
 | 22 | Route problems don't stop the legs being calculated: a repeated stop is skipped, and a route that doesn't start at Earth leaves its first stop from the surface point facing the next one. | Ours | Drafts can be saved (#10), so agents should still see distances and range while they fix the route. |
 | 23 | The starting planet is not a landing: it gets no temperature check and no advisories. | Ours | The ship begins the mission there rather than arriving. |
 | 24 | Gravity is shown as a multiple of Earth's using standard gravity, 9.80665 m/s². | Ours | It is only for messages, and standard gravity is the usual reference for "g". |
+| 28 | A malformed route (not starting at Earth, no destination, the same planet twice in a row) blocks saving. Every other violation, including a star stop or an incompatible landing temperature, is saved with the draft. | Ours | Follows PLAN.md Phase 5; a malformed route has no meaningful mission, while the other problems are things the agent fixes with the customer (#10). |
+| 29 | A plan needs a spacecraft to be saved. | Ours | Every cached total (range, duration, feasibility) depends on the spacecraft. |
+| 30 | A planet that appears on any saved route cannot be deleted. | Ours | Keeps saved plans intact; goes with #25. |
 
 ## Data
 
