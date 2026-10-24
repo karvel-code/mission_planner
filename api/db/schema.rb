@@ -10,9 +10,34 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_23_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_23_130001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "mission_plans", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "customer_name"
+    t.bigint "spacecraft_id", null: false
+    t.integer "passenger_count", default: 0, null: false
+    t.text "notes"
+    t.float "total_distance_km"
+    t.float "range_used_km"
+    t.float "duration_hours"
+    t.boolean "feasible"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["spacecraft_id"], name: "index_mission_plans_on_spacecraft_id"
+  end
+
+  create_table "mission_stops", force: :cascade do |t|
+    t.bigint "mission_plan_id", null: false
+    t.bigint "planet_id", null: false
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["mission_plan_id", "position"], name: "index_mission_stops_on_mission_plan_id_and_position", unique: true
+    t.index ["planet_id"], name: "index_mission_stops_on_planet_id"
+  end
 
   create_table "planets", force: :cascade do |t|
     t.string "name", null: false
@@ -48,4 +73,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_120001) do
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_spacecraft_on_slug", unique: true
   end
+
+  add_foreign_key "mission_plans", "spacecraft"
+  add_foreign_key "mission_stops", "mission_plans"
+  add_foreign_key "mission_stops", "planets"
 end
