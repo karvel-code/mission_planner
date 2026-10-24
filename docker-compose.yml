@@ -51,6 +51,9 @@ services:
       context: ./web
       dockerfile: Dockerfile.dev
     command: npm run dev -- --host 0.0.0.0 --port 5173
+    environment:
+      # The dev server forwards /api to Rails (web/vite.config.ts).
+      API_PROXY_TARGET: http://api:3000
     ports:
       - "5173:5173"
     volumes:
