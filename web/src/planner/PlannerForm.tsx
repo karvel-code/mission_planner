@@ -1,16 +1,25 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
-import { useMissionCalculation } from '../api/hooks'
+import { ApiError } from '../api/client'
+import {
+  useCreateMissionPlan,
+  useDeleteMissionPlan,
+  useDuplicateMissionPlan,
+  useMissionCalculation,
+  useUpdateMissionPlan,
+} from '../api/hooks'
 import type { MissionPlan, Planet, Spacecraft } from '../api/schemas'
 import { Field, inputClass } from '../components/Field'
 import { EARTH, type RouteNeeds } from '../lib/mission'
+import { hrefs, navigate, useLeaveGuard } from '../lib/route'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { AdvisoriesPanel } from './AdvisoriesPanel'
 import { FeasibilityPanel } from './FeasibilityPanel'
-import { initialValues, plannerFormSchema, type PlannerFormValues } from './form'
+import { initialValues, plannerFormSchema, toPlanInput, type PlannerFormValues } from './form'
 import { LegTable } from './LegTable'
 import { PassengerInput } from './PassengerInput'
+import { PlanActions, type SaveStatus } from './PlanActions'
 import { PlanetInfoCard } from './PlanetInfoCard'
 import { RouteBuilder } from './RouteBuilder'
 import { SpacecraftPicker } from './SpacecraftPicker'
@@ -31,7 +40,16 @@ interface Props {
  * POST /api/mission_calculations once the agent pauses.
  */
 export function PlannerForm({ plan, planets, fleet }: Props) {
-  const { control, register, setValue, getValues } = useForm<PlannerFormValues>({
+  const {
+    control,
+    register,
+    setValue,
+    getValues,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { isDirty, errors },
+  } = useForm<PlannerFormValues>({
     resolver: zodResolver(plannerFormSchema),
     defaultValues: initialValues(plan, fleet),
   })
@@ -70,10 +88,72 @@ export function PlannerForm({ plan, planets, fleet }: Props) {
 
   // Switching to a smaller spacecraft lowers the passenger count to fit.
   const chooseSpacecraft = (craft: Spacecraft) => {
-    setValue('spacecraft_id', craft.id)
+    setValue('spacecraft_id', craft.id, { shouldDirty: true })
     const current = getValues('passenger_count')
     setReducedFrom(current > craft.capacity ? current : null)
-    if (current > craft.capacity) setValue('passenger_count', craft.capacity)
+    if (current > craft.capacity) setValue('passenger_count', craft.capacity, { shouldDirty: true })
+  }
+
+  const createPlan = useCreateMissionPlan()
+  const updatePlan = useUpdateMissionPlan(plan?.id ?? 0)
+  const duplicatePlan = useDuplicateMissionPlan()
+  const deletePlan = useDeleteMissionPlan()
+  const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' })
+  useLeaveGuard(isDirty, 'Leave this plan? Your unsaved changes will be lost.')
+
+  // Field errors from the API go next to their field; anything else to the header.
+  const showFailure = (error: unknown) => {
+    const fieldOf: Record<string, keyof PlannerFormValues> = {
+      name: 'name',
+      route: 'stops',
+      planet_ids: 'stops',
+      passenger_count: 'passenger_count',
+    }
+    const problems = error instanceof ApiError ? error.errors : []
+    problems.forEach(({ field, message }) => {
+      const formField = field ? fieldOf[field] : undefined
+      if (formField) setError(formField, { message })
+    })
+    const message = error instanceof Error ? error.message : 'Something went wrong.'
+    setStatus({ kind: 'error', message: `Couldn't save: ${message}` })
+  }
+
+  const save = handleSubmit(async (values) => {
+    setStatus({ kind: 'busy', label: 'Saving…' })
+    try {
+      if (plan) {
+        const saved = await updatePlan.mutateAsync(toPlanInput(values, earth.id))
+        reset(initialValues(saved, fleet))
+        setStatus({ kind: 'saved' })
+      } else {
+        const saved = await createPlan.mutateAsync(toPlanInput(values, earth.id))
+        navigate(hrefs.plan(saved.id))
+      }
+    } catch (error) {
+      showFailure(error)
+    }
+  })
+
+  const duplicate = async () => {
+    if (!plan) return
+    setStatus({ kind: 'busy', label: 'Duplicating…' })
+    try {
+      const copy = await duplicatePlan.mutateAsync(plan.id)
+      navigate(hrefs.plan(copy.id))
+    } catch (error) {
+      setStatus({ kind: 'error', message: `Couldn't duplicate: ${(error as Error).message}` })
+    }
+  }
+
+  const remove = async () => {
+    if (!plan || !window.confirm(`Delete "${plan.name}"? This cannot be undone.`)) return
+    setStatus({ kind: 'busy', label: 'Deleting…' })
+    try {
+      await deletePlan.mutateAsync(plan.id)
+      navigate(hrefs.plans)
+    } catch (error) {
+      setStatus({ kind: 'error', message: `Couldn't delete: ${(error as Error).message}` })
+    }
   }
 
   return (
@@ -82,12 +162,25 @@ export function PlannerForm({ plan, planets, fleet }: Props) {
         <header className="border-b border-line px-[22px] py-5">
           <p className="eyebrow">{plan ? 'Mission plan' : 'New mission plan'}</p>
           <h1 className="mt-1 truncate text-[22px] font-medium tracking-[-0.01em]">{name.trim() || 'Untitled mission'}</h1>
+          <PlanActions
+            saved={plan !== null}
+            dirty={isDirty}
+            status={status}
+            onSave={save}
+            onDuplicate={duplicate}
+            onDelete={remove}
+          />
         </header>
 
         <Step n="01" title="Booking">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Mission name">
-              <input className={inputClass} placeholder="e.g. Outer giants tour" {...register('name')} />
+            <Field label="Mission name" error={errors.name?.message}>
+              <input
+                className={inputClass}
+                placeholder="e.g. Outer giants tour"
+                aria-invalid={errors.name ? true : undefined}
+                {...register('name')}
+              />
             </Field>
             <Field label="Customer" hint="Person or group booking">
               <input className={inputClass} placeholder="e.g. Okafor family" {...register('customer_name')} />
@@ -138,6 +231,11 @@ export function PlannerForm({ plan, planets, fleet }: Props) {
               />
             )}
           />
+          {errors.stops && (
+            <p role="alert" className="mt-3 text-[12.5px] text-error">
+              {errors.stops.message}
+            </p>
+          )}
           {inspected && (
             <div className="mt-4">
               <PlanetInfoCard planet={inspected} spacecraft={spacecraft} />

@@ -1,17 +1,30 @@
-import type { ReactNode } from 'react'
+import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react'
 
-/** A labelled input from the TEC concept, with an error or a hint underneath. */
+/**
+ * A labelled input from the TEC concept, with an error or a hint underneath.
+ * The hint or error describes the input (aria-describedby) rather than being
+ * part of its name, so screen readers announce "Mission name" on its own.
+ */
 export function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: ReactNode }) {
+  const noteId = useId()
+  const note = error ?? hint
+  const input =
+    note && isValidElement(children)
+      ? cloneElement(children as ReactElement<{ 'aria-describedby'?: string }>, { 'aria-describedby': noteId })
+      : children
+
   return (
-    <label className="grid content-start gap-1.5">
-      <span className="label">{label}</span>
-      {children}
-      {error ? (
-        <span className="text-[12.5px] text-error">{error}</span>
-      ) : (
-        hint && <span className="text-[12.5px] text-muted">{hint}</span>
+    <div className="grid content-start gap-1.5">
+      <label className="grid gap-1.5">
+        <span className="label">{label}</span>
+        {input}
+      </label>
+      {note && (
+        <span id={noteId} className={`text-[12.5px] ${error ? 'text-error' : 'text-muted'}`}>
+          {note}
+        </span>
       )}
-    </label>
+    </div>
   )
 }
 
