@@ -1,9 +1,10 @@
-import { act, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { MissionPlan, MissionPlanInput } from './api/schemas'
 import App from './App'
+import { fakeCalculation } from './test/fakeCalculation'
 import { hopperToJupiter, redPlanetGetaway, redPlanetGetawayDetail } from './test/fixtures'
 import { renderWithQuery } from './test/render'
 import { server } from './test/server'
@@ -203,6 +204,90 @@ describe('Leaving with unsaved changes', () => {
     window.dispatchEvent(unloadChanged)
 
     expect(unloadChanged.defaultPrevented).toBe(true)
+  })
+})
+
+describe('A plan over its spacecraft’s capacity', () => {
+  it('shows the capacity violation and what to do about it', async () => {
+    // The planner keeps new counts within capacity, but a saved plan can still
+    // end up over it, e.g. when an updated data file gives a spacecraft fewer seats.
+    serveDetail(savedPlan({ id: 3, name: 'Overbooked', spacecraft_id: 1, passenger_count: 7 }))
+    await openPlanner('#/plans/3')
+
+    const blockers = await screen.findByRole('list', { name: 'Blocking problems' })
+    expect(blockers).toHaveTextContent(
+      "7 passengers exceed Millennial Hopper's capacity of 5. Reduce to 5 passengers or choose Star Explorer 1.",
+    )
+    const feasibility = screen.getByRole('region', { name: 'Feasibility' })
+    expect(feasibility).toHaveTextContent('7 of 5 seats')
+    expect(within(feasibility).getByText('Not feasible')).toBeInTheDocument()
+  })
+})
+
+describe('Saving and reopening', () => {
+  it('reopens a saved plan, after a reload, exactly as it was entered', async () => {
+    // A mock API that remembers what was saved, like the real one.
+    const stored = new Map<number, MissionPlan>()
+    server.use(
+      http.post('*/api/mission_plans', async ({ request }) => {
+        const input = (await request.json()) as MissionPlanInput
+        const mission = fakeCalculation(input)
+        const now = new Date().toISOString()
+        const plan: MissionPlan = {
+          ...input,
+          id: 42,
+          customer_name: input.customer_name ?? null,
+          notes: input.notes ?? null,
+          total_distance_km: mission.totals.distance_km,
+          range_used_km: mission.totals.range_used_km,
+          duration_hours: mission.totals.duration_hours,
+          feasible: mission.feasible,
+          created_at: now,
+          updated_at: now,
+          mission,
+        }
+        stored.set(plan.id, plan)
+        return HttpResponse.json(plan, { status: 201 })
+      }),
+      http.get('*/api/mission_plans/:id', ({ params }) => {
+        const plan = stored.get(Number(params.id))
+        return plan
+          ? HttpResponse.json(plan)
+          : HttpResponse.json({ errors: [{ field: null, message: 'Mission plan not found' }] }, { status: 404 })
+      }),
+    )
+
+    const user = await openPlanner('#/plans/new')
+    await user.type(screen.getByRole('textbox', { name: 'Mission name' }), 'Outer giants tour')
+    await user.type(screen.getByRole('textbox', { name: 'Customer' }), 'Acme Corp offsite')
+    await user.type(screen.getByRole('textbox', { name: 'Notes' }), 'Window seats')
+    await user.click(screen.getByRole('radio', { name: /Serenity XL/ }))
+    const passengers = screen.getByRole('spinbutton', { name: 'Number of passengers' })
+    await user.clear(passengers)
+    await user.type(passengers, '12')
+    await addStop(user, 'Mars')
+    await addStop(user, 'Jupiter')
+    await user.click(screen.getByRole('button', { name: 'Save plan' }))
+    await waitFor(() => expect(window.location.hash).toBe('#/plans/42'))
+
+    // "Reload": throw away the app and its cache, and open the saved plan's link fresh.
+    cleanup()
+    renderWithQuery(<App />)
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Outer giants tour' })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Mission name' })).toHaveValue('Outer giants tour')
+    expect(screen.getByRole('textbox', { name: 'Customer' })).toHaveValue('Acme Corp offsite')
+    expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Window seats')
+    expect(screen.getByRole('radio', { name: /Serenity XL/ })).toBeChecked()
+    expect(screen.getByRole('spinbutton', { name: 'Number of passengers' })).toHaveValue(12)
+    const route = within(screen.getByRole('list', { name: 'Route' }))
+    expect(route.getAllByRole('button', { name: /^(Mars|Jupiter)$/ }).map((b) => b.textContent)).toEqual(['Mars', 'Jupiter'])
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled() // nothing changed since it was saved
+
+    const legs = within(await screen.findByRole('table')).getAllByRole('row')
+    expect(legs[1]).toHaveTextContent('Earth→Mars')
+    expect(legs[2]).toHaveTextContent('Mars→Jupiter')
+    expect(legs[3]).toHaveTextContent('Total · 12 passengers')
   })
 })
 
