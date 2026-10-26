@@ -110,6 +110,72 @@ describe('legPoints', () => {
   })
 })
 
+// Long legs as the API returns them. Earth → Saturn is two straight lines over
+// the top of Jupiter; Earth → Neptune also passes over Saturn and Uranus.
+const line = (from: [number, number], to: [number, number]) => ({
+  type: 'line' as const,
+  from: { x: from[0], y: from[1] },
+  to: { x: to[0], y: to[1] },
+  length_km: 0,
+})
+const longLeg = (to: string, segments: Leg['segments']): Leg => ({
+  ...marsToJupiter,
+  from_planet_id: planetNamed('Earth').id,
+  to_planet_id: planetNamed(to).id,
+  segments,
+})
+const earthToSaturn = longLeg('Saturn', [
+  line([149_606_371, 0], [778_499_931.2647754, 69_909.96620989667]),
+  line([778_499_931.2647754, 69_909.96620989667], [1_433_941_770.0003312, 6.210307982278207]),
+])
+const earthToNeptune = longLeg('Neptune', [
+  line([149_606_371, 0], [778_499_931.2647754, 69_909.96620989667]),
+  line([778_499_931.2647754, 69_909.96620989667], [1_433_999_997.3523238, 58_229.99993980603]),
+  line([1_433_999_997.3600516, 58_229.9999401569], [4_494_975_378.000005, 0.4683891071645207]),
+])
+
+describe('legPoints on long legs', () => {
+  const tallest = Math.max(...schematic.bodies.map((b) => b.r))
+
+  // Every drawn piece, sampled finely, against every drawn planet.
+  const deepestCut = (points: { x: number; y: number }[]) =>
+    Math.max(
+      ...points.slice(1).flatMap((p, i) =>
+        Array.from({ length: 41 }, (_, s) => ({
+          x: points[i].x + ((p.x - points[i].x) * s) / 40,
+          y: points[i].y + ((p.y - points[i].y) * s) / 40,
+        })).flatMap((q) => schematic.bodies.map((b) => b.r - Math.hypot(q.x - b.cx, q.y - schematic.axisY))),
+      ),
+    )
+
+  for (const [name, leg] of [
+    ['Earth → Saturn', earthToSaturn],
+    ['Earth → Neptune', earthToNeptune],
+  ] as const) {
+    it(`draws ${name} no higher than the tallest planet (no humps between planets)`, () => {
+      const top = Math.min(...legPoints(leg, schematic).map((p) => p.y))
+      expect(schematic.axisY - top).toBeLessThanOrEqual(tallest + 1e-9)
+    })
+
+    it(`never draws ${name} through a planet`, () => {
+      expect(deepestCut(legPoints(leg, schematic))).toBeLessThanOrEqual(0.25)
+    })
+
+    it(`starts ${name} on Earth and ends it on the target`, () => {
+      const points = legPoints(leg, schematic)
+      expect(distanceFromCentre('Earth', points[0])).toBeCloseTo(body('Earth').r, 6)
+      expect(distanceFromCentre(name.split(' → ')[1], points.at(-1)!)).toBeCloseTo(body(name.split(' → ')[1]).r, 6)
+    })
+  }
+
+  it('draws a line between planets straight, not bent by the change of scale', () => {
+    const points = legPoints({ ...earthToSaturn, segments: [earthToSaturn.segments[0]] }, schematic)
+
+    expect(points).toHaveLength(2)
+    expect(points[1].y).toBeLessThan(points[0].y) // rising towards the top of Jupiter
+  })
+})
+
 describe('sampleSegment', () => {
   it('samples an arc finely enough to look round', () => {
     const arc = marsToJupiter.segments[0]

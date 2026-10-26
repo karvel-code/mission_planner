@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { MissionResult, Planet } from '../api/schemas'
 import { formatDistance } from '../lib/format'
 import { planetColour } from '../lib/planets'
-import { buildSchematic, legPoints, pathData, type Point } from './schematic'
+import { buildSchematic, legPoints, pathData, pointAlong, type Point } from './schematic'
 
 interface Props {
   /** The calculated mission, or null to show just the planets. */
@@ -21,7 +21,7 @@ export function RouteDiagram({ result, planets, highlighted, onHighlight }: Prop
   const schematic = useMemo(() => buildSchematic(planets), [planets])
   const resultLegs = result?.legs ?? []
   const legs = resultLegs.map((leg) => legPoints(leg, schematic))
-  const labels = placeLabels(legs.map((points) => points[Math.floor(points.length / 2)]))
+  const labels = placeLabels(legs.map((points) => pointAlong(points, 0.5)))
   const onRoute = new Set(resultLegs.flatMap((leg) => [leg.from_planet_id, leg.to_planet_id]))
   const name = (id: number) => planets.find((p) => p.id === id)?.name ?? `Planet ${id}`
 
