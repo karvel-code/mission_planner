@@ -6,7 +6,7 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import type { MissionResult, Planet, Spacecraft } from '../api/schemas'
 import { EARTH } from '../lib/mission'
-import { buildSchematic, legPoints, type Point, type Schematic } from '../planner/schematic'
+import { buildSchematic, legPoints, pointAlong as pointAt, type Point, type Schematic } from '../planner/schematic'
 import { glowTexture, gridFloor, PlanetBody, Starfield, SunBody } from './bodies'
 import { shipSpec } from './fleet'
 import { Ship, type FleetScale } from './ship'
@@ -422,25 +422,5 @@ export class TrajectoryScene extends Stage {
 }
 
 const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
-
-const polylineLength = (points: Point[]) =>
-  points.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - points[i].x, p.y - points[i].y), 0)
-
-/** The point at fraction `t` (0…1) of a polyline's length. */
-function pointAt(points: Point[], t: number): Point {
-  const target = polylineLength(points) * Math.min(1, Math.max(0, t))
-  let walked = 0
-  for (let i = 1; i < points.length; i++) {
-    const a = points[i - 1]
-    const b = points[i]
-    const seg = Math.hypot(b.x - a.x, b.y - a.y)
-    if (walked + seg >= target && seg > 0) {
-      const f = (target - walked) / seg
-      return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f }
-    }
-    walked += seg
-  }
-  return points[points.length - 1]
-}
 
 const resample = (points: Point[], n: number) => Array.from({ length: n + 1 }, (_, i) => pointAt(points, i / n))
