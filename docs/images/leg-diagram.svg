@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 290" width="720" height="290" font-family="Helvetica, Arial, sans-serif" font-size="12">
+  <title>One leg of a route: wrap around the departure planet, tangent lines, an arc over an obstacle, and arrival on the target</title>
+  <rect width="720" height="290" fill="#ffffff"/>
+  <line x1="20" y1="190" x2="700" y2="190" stroke="#9aa5b1" stroke-dasharray="4 5"/>
+
+  <!-- Planets -->
+  <circle cx="170" cy="190" r="40" fill="#dce7f5" stroke="#4f6ee8"/>
+  <circle cx="390" cy="190" r="50" fill="#efe6d8" stroke="#b08a5a"/>
+  <circle cx="620" cy="190" r="35" fill="#e3f2ea" stroke="#3a9d6a"/>
+  <text x="170" y="250" text-anchor="middle" fill="#1f2933">departure planet</text>
+  <text x="390" y="260" text-anchor="middle" fill="#1f2933">planet in the way</text>
+  <text x="620" y="245" text-anchor="middle" fill="#1f2933">target</text>
+  <text x="20" y="280" fill="#66717e">Dashed: the axis through every planet's centre. Not to scale.</text>
+
+  <!-- A candidate the search rejects: it would cut through the planet in the way -->
+  <line x1="173.6" y1="150.2" x2="585.1" y2="186.9" stroke="#d64545" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="222" y="192" fill="#d64545">rejected: cuts through a planet</text>
+
+  <!-- The shortest path -->
+  <path d="M130.0,190.0 A40,40 0 0 1 168.2,150.0 L387.7,140.1 A50,50 0 0 1 400.9,141.2 L585.8,182.4" fill="none" stroke="#0077cc" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- Graph nodes (tangent points) -->
+  <g fill="#ffffff" stroke="#0077cc" stroke-width="2">
+    <circle cx="168.2" cy="150.0" r="4"/>
+    <circle cx="387.7" cy="140.1" r="4"/>
+    <circle cx="400.9" cy="141.2" r="4"/>
+  </g>
+  <circle cx="173.6" cy="150.2" r="4" fill="#ffffff" stroke="#d64545" stroke-width="2"/>
+  <circle cx="130.0" cy="190.0" r="5" fill="#fc6a18"/>
+  <circle cx="585.8" cy="182.4" r="5" fill="#3a9d6a"/>
+
+  <!-- Labels -->
+  <text x="120.0" y="180.0" text-anchor="end" fill="#c2410c">S: landed here</text>
+  <text x="130.0" y="124.0" text-anchor="middle" fill="#0077cc">departure wrap</text>
+  <text x="278.0" y="133.0" text-anchor="middle" fill="#0077cc">tangent line</text>
+  <text x="410.0" y="122.0" text-anchor="middle" fill="#0077cc">arc over the planet</text>
+  <text x="503.4" y="149.8" fill="#0077cc">aimed at the target's centre</text>
+  <text x="595.8" y="176.4" fill="#2d7d55">arrival G</text>
+  <text x="20" y="24" fill="#66717e">The dots on the path are tangent points: the nodes of the graph the search runs on.</text>
+</svg>
